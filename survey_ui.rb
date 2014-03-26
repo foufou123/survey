@@ -1,11 +1,14 @@
 require 'active_record'
 require './lib/survey'
 require './lib/question'
+require './lib/answer'
+require 'pry'
 
 database_configuration = YAML::load(File.open('./db/config.yml'))
 development_configuration = database_configuration["development"]
 ActiveRecord::Base.establish_connection(development_configuration)
-
+@survey = nil
+@questions = nil
 
 def welcome
   puts "Welcome to our Survey"
@@ -20,6 +23,8 @@ def menu
     puts "Press 'l' to list all surveys"
     puts "Press 'lq' to see the questions in a survey"
     puts "Press 'aq' to add questions to your survey"
+    puts "Press 'aa' to add possible answers to existing questions"
+    puts "Press 'vd' to view database"
     puts "Press 'x' to exit"
     choice = gets.chomp
     case choice
@@ -33,6 +38,10 @@ def menu
       list_survey_questions
     when 'aq'
       add_question_existing_survey
+    when 'aa'
+      add_answer_to_existing_question
+    when 'vd'
+      view_database
     when 'x'
       puts "Good bye!"
       exit
@@ -80,6 +89,45 @@ def add_question_to_new_survey(survey)
   puts "\n\nQuestion added to survey!"
 end
 
+def add_answer_to_existing_question
+  puts "\n\n"
+  list_survey
+  puts "Which Survey ID you'd like to update?"
+  survey_id = gets.chomp.to_i
+  @survey = Survey.find(survey_id)
+  @questions = Question.where(survey_id: @survey.id)
+  puts "\n\n#{@survey.name}"
+  choice = nil
+  until choice == 'f'
+    puts "Press 'a' to add another answer, 'n' to go to the next question, or 'f' to finish survey."
+    choice = gets.chomp
+    case choice
+    when 'a'
+    add_answer
+    when 'f'
+      "Survey complete!"
+    else
+      "Invalid input"
+    end
+  end
+end
+
+def add_answer
+  @questions.each { |question| puts "#{question.id} - #{question.name}" }
+  puts "Which question do you want to provide answers for?"
+  choice = gets.chomp.to_i
+  if choice == 'f'
+    puts "Questions added!"
+    menu
+  else
+    question = Question.find(choice)
+    print "Enter a possible answer: "
+    response = gets.chomp
+    question.answers.create({response: response})
+  end
+end
+
+
 def add_question_existing_survey
   puts "\n\n"
   list_survey
@@ -103,7 +151,6 @@ def add_question_existing_survey
   menu
 end
 
-
 def list_survey_questions
   puts "\n\n"
   list_survey
@@ -112,13 +159,26 @@ def list_survey_questions
   survey = Survey.find(survey_id)
   questions = Question.where(survey_id: survey.id)
   puts "\n\n#{survey.name}"
-  questions.each { |question| puts question.name}
+  questions.each { |question| puts "#{question.id} - #{question.name}" }
   menu
 end
 
 def list_survey
   puts "\n\n"
   Survey.all.each { |survey| puts "#{survey.id} - #{survey.name}" }
+end
+
+def view_database
+  puts"\n\n"
+  Survey.all.each do |survey|
+    puts survey.name
+    survey.questions.each do |question|
+      puts "\t#{question.name}"
+      question.answers.each do |answer|
+        puts "\t\t#{answer.response}"
+      end
+    end
+  end
 end
 
 welcome
