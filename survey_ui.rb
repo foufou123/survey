@@ -61,7 +61,7 @@ def new_survey
     choice = gets.chomp
     case choice
     when 'a'
-      add_question_to_new_survey(survey.id)
+      add_question_to_new_survey(survey)
     when 'f'
       "Survey complete!"
     else
@@ -72,11 +72,11 @@ def new_survey
   menu
 end
 
-def add_question_to_new_survey(survey_id)
+def add_question_to_new_survey(survey)
   puts "\n"
   print "Enter the question you want to ask: "
   new_question = gets.chomp
-  Question.create({ name: new_question, survey_id: survey_id})
+  survey.questions.create({ name: new_question })
   puts "\n\nQuestion added to survey!"
 end
 
@@ -85,13 +85,14 @@ def add_question_existing_survey
   list_survey
   puts "Which Survey ID you'd like to update"
   survey_id = gets.chomp.to_i
+  survey = Survey.find(survey_id)
    choice = nil
   until choice == 'f'
     puts "Press 'a' to add another question or 'f' to finish survey."
     choice = gets.chomp
     case choice
     when 'a'
-    add_question_to_new_survey(survey_id)
+    add_question_to_new_survey(survey)
     when 'f'
       "Survey complete!"
     else
