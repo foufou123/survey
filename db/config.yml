@@ -1,7 +1,7 @@
 development:
   adapter: postgresql
-  database: to_do_development
+  database: survey_development
 
 test:
   adapter: postgresql
-  database: to_do_test
+  database: survey_test
