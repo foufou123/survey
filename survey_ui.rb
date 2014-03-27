@@ -2,6 +2,7 @@ require 'active_record'
 require './lib/survey'
 require './lib/question'
 require './lib/answer'
+require './lib/observation'
 require 'pry'
 
 database_configuration = YAML::load(File.open('./db/config.yml'))
@@ -9,17 +10,24 @@ development_configuration = database_configuration["development"]
 ActiveRecord::Base.establish_connection(development_configuration)
 @survey = nil
 @questions = nil
+@user = nil
 
 def welcome
   puts "Welcome to our Survey"
-  menu
+  print "\nAre a survey [taker] or [designer]? "
+  @user = gets.chomp
+  case @user
+  when "designer"
+    menu
+  when "taker"
+    take_survey
+  end
 end
 
 def menu
   choice = nil
   until choice == 'x'
     puts "\n\nPress 'c' to create a new Survey"
-    puts "Press 't' to take a survey"
     puts "Press 'l' to list all surveys"
     puts "Press 'lq' to see the questions in a survey"
     puts "Press 'aq' to add questions to your survey"
@@ -30,8 +38,6 @@ def menu
     case choice
     when 'c'
       new_survey
-    when 't'
-      take_survey
     when 'l'
       list_survey
     when 'lq'
@@ -178,6 +184,35 @@ def view_database
         puts "\t\t#{answer.response}"
       end
     end
+  end
+end
+
+def take_survey
+  puts "\n\n"
+  list_survey
+  print "Choose a survey id: "
+  survey_id = gets.chomp.to_i
+  survey = Survey.find(survey_id)
+  puts survey.name
+  puts "\n"
+  survey.questions.each do |question|
+    puts "#{question.name}"
+    question.answers.each do |answer|
+      puts "#{answer.id} - #{answer.response}"
+    end
+    print "Choose a number: "
+    feedback = gets.chomp.to_i
+    chosen_answer = Answer.all[feedback]
+    chosen_answer.observations.create({ feedback: feedback })
+    puts "\n\n"
+  end
+  puts "Thanks for taking that survey!"
+  print "Take another survey? "
+  response = gets.chomp
+  if response == 'yes'
+    take_survey
+  else
+    welcome
   end
 end
 
